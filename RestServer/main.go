@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -17,16 +18,52 @@ func init() {
 	port = flag.String("port", "8080", "Port on which server will listen for requests")
 }
 
+func GetAllFromDB(conn *pgx.Conn) []Farmers {
+	var farmersData []Farmers
+
+	rows, _ := conn.Query("SELECT * FROM farmers")
+
+	for rows.Next() {
+		values, err := rows.Values()
+		if err != nil {
+			log.Fatal("error while iterating dataset")
+		}
+		var farmersTemp Farmers
+
+		farmersTemp.ID = values[0].(int64)
+		farmersTemp.Name = values[1].(string)
+		farmersTemp.Surname = values[2].(string)
+		farmersTemp.Country = values[3].(string)
+		farmersTemp.DateOfBirth, _ = time.Parse("2006-01-02", values[4].(time.Time).Format("2006-01-02"))
+		farmersTemp.Email = values[5].(string)
+		farmersTemp.Village = values[6].(string)
+		farmersTemp.Land = values[7].(int32)
+		farmersTemp.AvgIncome = values[8].(string)
+
+		farmersData = append(farmersData, farmersTemp)
+	}
+
+	return farmersData
+}
+
 type Farmers struct {
-	ID            int64
-	Name          string
-	Surname       string
-	Country       string
-	Date_of_birth time.Time
-	Email         string
-	Village       string
-	Land          int32
-	Avg_income    string
+	ID          int64
+	Name        string
+	Surname     string
+	Country     string
+	DateOfBirth time.Time
+	Email       string
+	Village     string
+	Land        int32
+	AvgIncome   string
+}
+
+func (farmers *Farmers) PrintFarmers() {
+	farmersJSON, err := json.MarshalIndent(farmers, "", " ")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	fmt.Printf("%s\n", string(farmersJSON))
 }
 
 func main() {
@@ -52,30 +89,10 @@ func main() {
 
 		var farmersData []Farmers
 
-		rows, _ := datapool.Query("SELECT * FROM farmers")
-
-		for rows.Next() {
-			values, err := rows.Values()
-			if err != nil {
-				log.Fatal("error while iterating dataset")
-			}
-			var farmersTemp Farmers
-
-			farmersTemp.ID = values[0].(int64)
-			farmersTemp.Name = values[1].(string)
-			farmersTemp.Surname = values[2].(string)
-			farmersTemp.Country = values[3].(string)
-			farmersTemp.Date_of_birth = values[4].(time.Time)
-			farmersTemp.Email = values[5].(string)
-			farmersTemp.Village = values[6].(string)
-			farmersTemp.Land = values[7].(int32)
-			farmersTemp.Avg_income = values[8].(string)
-
-			farmersData = append(farmersData, farmersTemp)
-		}
+		farmersData = GetAllFromDB(datapool)
 
 		for _, v := range farmersData {
-			fmt.Println(v)
+			v.PrintFarmers()
 		}
 	})
 
