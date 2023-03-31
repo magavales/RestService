@@ -11,7 +11,7 @@ type Server struct {
 
 func (s *Server) InitServer(port string, handler *gin.Engine) error {
 	s.httpServer = &http.Server{
-		Addr:    port,
+		Addr:    ":" + port,
 		Handler: handler,
 	}
 

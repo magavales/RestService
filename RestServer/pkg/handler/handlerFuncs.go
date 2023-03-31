@@ -2,41 +2,16 @@ package handler
 
 import (
 	utilites "RestService"
+	"RestService/pkg/database"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx"
 	"log"
-	"time"
 )
 
-func GetAllFromDB(conn *pgx.Conn) *[]utilites.Farmer {
+func (h *Handler) SelectAll(c *gin.Context) {
+	var db database.Database
 	var farmersData []utilites.Farmer
 
-	rows, _ := conn.Query("SELECT * FROM farmers")
-
-	for rows.Next() {
-		values, err := rows.Values()
-		if err != nil {
-			log.Fatal("error while iterating dataset")
-		}
-		var farmersTemp utilites.Farmer
-
-		farmersTemp.ID = values[0].(int64)
-		farmersTemp.Name = values[1].(string)
-		farmersTemp.Surname = values[2].(string)
-		farmersTemp.Country = values[3].(string)
-		farmersTemp.DateOfBirth, _ = time.Parse("2006-01-02", values[4].(time.Time).Format("2006-01-02"))
-		farmersTemp.Email = values[5].(string)
-		farmersTemp.Village = values[6].(string)
-		farmersTemp.Land = values[7].(int32)
-		farmersTemp.AvgIncome = values[8].(string)
-
-		farmersData = append(farmersData, farmersTemp)
-	}
-
-	return &farmersData
-}
-
-func (h *Handler) SelectAll(c *gin.Context) {
 	conf := pgx.ConnConfig{
 		Host:     "localhost",
 		Port:     5432,
@@ -45,11 +20,36 @@ func (h *Handler) SelectAll(c *gin.Context) {
 		Password: "1703",
 	}
 
-	datapool, _ := pgx.Connect(conf)
+	db.Connect(conf)
+	db.GetAll(&farmersData)
+	err := db.Pool.Close()
+	if err != nil {
+		log.Printf("Don't close connection with database: %s\n", err)
+	}
 
-	farmersData := new([]utilites.Farmer)
+	for _, v := range farmersData {
+		v.PrintFarmers()
+	}
+}
 
-	farmersData = GetAllFromDB(datapool)
+func (h *Handler) SelectOrderByID(c *gin.Context) {
+	var db database.Database
+	var farmersData []utilites.Farmer
+
+	conf := pgx.ConnConfig{
+		Host:     "localhost",
+		Port:     5432,
+		Database: "postgres",
+		User:     "postgres",
+		Password: "1703",
+	}
+
+	db.Connect(conf)
+	db.GetOrderByID(&farmersData)
+	err := db.Pool.Close()
+	if err != nil {
+		log.Printf("Don't close connection with database: %s\n", err)
+	}
 
 	for _, v := range farmersData {
 		v.PrintFarmers()

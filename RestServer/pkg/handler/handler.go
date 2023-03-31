@@ -10,7 +10,11 @@ func (h *Handler) InitRouter() *gin.Engine {
 
 	database := router.Group("/database")
 	{
-		database.GET("/all")
+		database.GET("/all", h.SelectAll)
+		orderBy := database.Group("/orderBy")
+		{
+			orderBy.GET("/id", h.SelectOrderByID)
+		}
 	}
 
 	return router
