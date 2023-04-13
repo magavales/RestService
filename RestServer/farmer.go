@@ -1,4 +1,4 @@
-package utilites
+package RestService
 
 import (
 	"encoding/json"
@@ -17,6 +17,18 @@ type Farmer struct {
 	Village     string
 	Land        int32
 	AvgIncome   string
+}
+
+func (farmer *Farmer) ParseData(values []interface{}) {
+	farmer.ID = values[0].(int64)
+	farmer.Name = values[1].(string)
+	farmer.Surname = values[2].(string)
+	farmer.Country = values[3].(string)
+	farmer.DateOfBirth, _ = values[4].(time.Time)
+	farmer.Email = values[5].(string)
+	farmer.Village = values[6].(string)
+	farmer.Land = values[7].(int32)
+	farmer.AvgIncome = values[8].(string)
 }
 
 func (farmer *Farmer) PrintFarmers() {
