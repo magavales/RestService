@@ -17,5 +17,10 @@ func (h *Handler) InitRouter() *gin.Engine {
 		}
 	}
 
+	user := router.Group("/user")
+	{
+		user.POST("/signOn", h.SignOn)
+	}
+
 	return router
 }
