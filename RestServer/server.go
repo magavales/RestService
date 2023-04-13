@@ -1,4 +1,4 @@
-package utilites
+package RestService
 
 import (
 	"github.com/gin-gonic/gin"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	utilites "RestService"
+	"RestService"
 	"RestService/pkg/handler"
 	"flag"
 	"log"
@@ -12,7 +12,7 @@ func main() {
 
 	router := new(handler.Handler).InitRouter()
 
-	server := new(utilites.Server)
+	server := new(RestService.Server)
 	err := server.InitServer("8080", router)
 	if err != nil {
 		log.Fatalf("Server can't be opened: %s", err)
