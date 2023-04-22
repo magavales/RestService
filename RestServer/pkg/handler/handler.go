@@ -8,18 +8,21 @@ type Handler struct {
 func (h *Handler) InitRouter() *gin.Engine {
 	router := gin.Default()
 
-	database := router.Group("/database")
+	api := router.Group("/api")
 	{
-		database.GET("/all", h.SelectAll)
-		orderBy := database.Group("/orderBy")
+		database := api.Group("/database")
 		{
-			orderBy.GET("/id", h.SelectOrderByID)
+			database.GET("/all", h.SelectAll)
+			orderBy := database.Group("/orderBy")
+			{
+				orderBy.GET("/id", h.SelectOrderByID)
+			}
 		}
-	}
 
-	user := router.Group("/user")
-	{
-		user.POST("/signOn", h.SignOn)
+		user := api.Group("/user")
+		{
+			user.POST("/login", h.Logon)
+		}
 	}
 
 	return router

@@ -2,15 +2,16 @@ package handler
 
 import (
 	"RestService"
+	"RestService/pkg/auth"
 	"RestService/pkg/database"
 	"github.com/gin-gonic/gin"
 	"log"
-	"net/http"
 )
 
 func (h *Handler) SelectAll(c *gin.Context) {
-	var db database.Database
-	var farmersData []RestService.Farmer
+	var (
+		db database.Database
+	)
 
 	db.Connect()
 	db.Farmers.GetAll(db.Pool)
@@ -19,14 +20,15 @@ func (h *Handler) SelectAll(c *gin.Context) {
 		log.Printf("Connection don't close with database: %s\n", err)
 	}
 
-	for _, v := range farmersData {
+	for _, v := range db.Farmers.Data {
 		v.PrintFarmers()
 	}
 }
 
 func (h *Handler) SelectOrderByID(c *gin.Context) {
-	var db database.Database
-	var farmersData []RestService.Farmer
+	var (
+		db database.Database
+	)
 
 	db.Connect()
 	db.Farmers.GetOrderByID(db.Pool)
@@ -35,24 +37,42 @@ func (h *Handler) SelectOrderByID(c *gin.Context) {
 		log.Printf("Connection don't close with database: %s\n", err)
 	}
 
-	for _, v := range farmersData {
+	for _, v := range db.Farmers.Data {
 		v.PrintFarmers()
 	}
 }
 
-func (h *Handler) SignOn(c *gin.Context) {
-	user := new(RestService.User)
-	user.FromJSON(c.Request.Body)
-
-	var db database.Database
-
+func (h *Handler) Logon(c *gin.Context) {
+	var (
+		db     database.Database
+		resp   Response
+		authen auth.Authentication
+		user   RestService.User
+	)
 	db.Connect()
-	db.Users.Insert(db.Pool, user)
+	db.Users.GetAll(db.Pool)
 
-	c.Writer.Header().Set("Content-Type", "application/json")
-	c.Writer.WriteHeader(http.StatusOK)
-	_, err := c.Writer.Write([]byte(`{"message": "Well done!"}`))
-	if err != nil {
-		return
+	resp.rw = c.Writer
+	user.GetData(c.Request.Body)
+
+	if db.Users.Contains(user) == 0 {
+		if user.Username == "admin" {
+			user.Role = 0
+			db.Users.Insert(db.Pool, user)
+
+			token, err := authen.GetToken(user.Username)
+
+			resp.ResponseJWT(token, err)
+		} else {
+			user.Role = 1
+			db.Users.Insert(db.Pool, user)
+
+			token, err := authen.GetToken(user.Username)
+
+			resp.ResponseJWT(token, err)
+		}
+
+	} else {
+		resp.ResponseWrongUsername()
 	}
 }
