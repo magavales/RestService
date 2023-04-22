@@ -12,13 +12,14 @@ type Message struct {
 }
 
 func (m *Message) Print() {
-	log.Printf("Response from server: %s\n"+
-		"StatusCode: %d\n", m.Msg, m.Status)
+	log.Printf("Response from server: %s\n", m.Msg)
+	log.Printf("StatusCode: %d\n", m.Status)
 }
 
 type Response struct {
 	Resp *http.Response
 	Msg  Message
+	Auth bool
 }
 
 func (r *Response) GetResponse() {
@@ -28,4 +29,12 @@ func (r *Response) GetResponse() {
 		log.Printf("Decoder failed to decode! : %s\n", err)
 	}
 	r.Msg.Status = r.Resp.StatusCode
+	r.Auth = Check(r)
+}
+
+func Check(r *Response) bool {
+	if r.Resp.Header.Get("Authorization") != "" {
+		return true
+	}
+	return false
 }

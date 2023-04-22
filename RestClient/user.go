@@ -6,14 +6,14 @@ import (
 )
 
 type User struct {
-	ID       int64
-	Login    string
-	Password string
-	Role     int16
+	ID       int64  `json:"ID"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     int16  `json:"role"`
 }
 
-func (u *User) CreateNewUser(Login string, Password string, Role int16) {
-	u.Login = Login
+func (u *User) CreateNewUser(Username string, Password string, Role int16) {
+	u.Username = Username
 	u.Password = Password
 	u.Role = Role
 }
