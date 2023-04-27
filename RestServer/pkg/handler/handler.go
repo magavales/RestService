@@ -21,7 +21,8 @@ func (h *Handler) InitRouter() *gin.Engine {
 
 		user := api.Group("/user")
 		{
-			user.POST("/login", h.Logon)
+			user.POST("/logon", h.Logon)
+			user.POST("/login", h.Login)
 		}
 	}
 

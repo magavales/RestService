@@ -11,7 +11,7 @@ type UsersDB struct {
 }
 
 func (udb *UsersDB) Insert(pool *pgx.Conn, user RestService.User) {
-	_, err := pool.Query("INSERT INTO users (login, password) VALUES ($1, $2)", user.Username, user.Password)
+	_, err := pool.Query("INSERT INTO users (username, password, role) VALUES ($1, $2, $3)", user.Username, user.Password, user.Role)
 	if err != nil {
 		return
 	}
@@ -39,8 +39,19 @@ func (udb *UsersDB) GetAll(pool *pgx.Conn) {
 func (udb *UsersDB) Contains(user RestService.User) int {
 	for _, v := range udb.Data {
 		if v.Username == user.Username {
-			return 1
+			return 0
 		}
 	}
-	return 0
+	return 1
+}
+
+func (udb *UsersDB) PasswordVerification(user RestService.User) int {
+	for _, v := range udb.Data {
+		if v.Username == user.Username {
+			if v.Password == user.Password {
+				return 0
+			}
+		}
+	}
+	return 1
 }

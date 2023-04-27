@@ -38,3 +38,12 @@ func (farmer *Farmer) PrintFarmers() {
 	}
 	fmt.Printf("%s\n", string(farmersJSON))
 }
+
+func (farmer *Farmer) ToJSON() []byte {
+	body, err := json.Marshal(farmer)
+	if err != nil {
+		log.Printf("Convertation has been stopped!: %s", err)
+	}
+
+	return body
+}

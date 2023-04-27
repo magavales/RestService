@@ -4,42 +4,44 @@ import (
 	"RestService"
 	"RestService/pkg/auth"
 	"RestService/pkg/database"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"log"
+	"strconv"
 )
 
 func (h *Handler) SelectAll(c *gin.Context) {
 	var (
-		db database.Database
+		db     database.Database
+		authen auth.Authentication
+		resp   Response
 	)
-
-	db.Connect()
-	db.Farmers.GetAll(db.Pool)
-	err := db.Pool.Close()
-	if err != nil {
-		log.Printf("Connection don't close with database: %s\n", err)
-	}
-
-	for _, v := range db.Farmers.Data {
-		v.PrintFarmers()
+	if authen.CheckToken(c.Request.Header.Get("Authorization")) == true {
+		db.Connect()
+		db.Farmers.GetAll(db.Pool)
+		resp.rw = c.Writer
+		i, _ := strconv.Atoi(c.Request.URL.Query().Get("offset"))
+		j, _ := strconv.Atoi(c.Request.URL.Query().Get("per_page"))
+		j = j + i
+		body, err := json.Marshal(db.Farmers.Data[i:j])
+		if err != nil {
+			log.Printf("Convertation has been stopped!: %s", err)
+		}
+		resp.ResponseGetData(c.Request.Header.Get("Authorization"), body)
 	}
 }
 
 func (h *Handler) SelectOrderByID(c *gin.Context) {
 	var (
-		db database.Database
+		db     database.Database
+		authen auth.Authentication
 	)
 
-	db.Connect()
-	db.Farmers.GetOrderByID(db.Pool)
-	err := db.Pool.Close()
-	if err != nil {
-		log.Printf("Connection don't close with database: %s\n", err)
+	if authen.CheckToken(c.Request.Header.Get("Authorization")) == true {
+		db.Connect()
+		db.Farmers.GetAll(db.Pool)
 	}
 
-	for _, v := range db.Farmers.Data {
-		v.PrintFarmers()
-	}
 }
 
 func (h *Handler) Logon(c *gin.Context) {
@@ -55,24 +57,57 @@ func (h *Handler) Logon(c *gin.Context) {
 	resp.rw = c.Writer
 	user.GetData(c.Request.Body)
 
-	if db.Users.Contains(user) == 0 {
+	if db.Users.Contains(user) == 1 {
 		if user.Username == "admin" {
 			user.Role = 0
 			db.Users.Insert(db.Pool, user)
 
 			token, err := authen.GetToken(user.Username)
+			if err != nil {
+				resp.ResponseWrongJWT()
+			} else {
+				resp.ResponseJWT(token)
+			}
 
-			resp.ResponseJWT(token, err)
+			resp.ResponseJWT(token)
 		} else {
 			user.Role = 1
 			db.Users.Insert(db.Pool, user)
 
 			token, err := authen.GetToken(user.Username)
-
-			resp.ResponseJWT(token, err)
+			if err != nil {
+				resp.ResponseWrongJWT()
+			} else {
+				resp.ResponseJWT(token)
+			}
 		}
 
 	} else {
 		resp.ResponseWrongUsername()
+	}
+}
+
+func (h *Handler) Login(c *gin.Context) {
+	var (
+		db     database.Database
+		resp   Response
+		authen auth.Authentication
+		user   RestService.User
+	)
+	db.Connect()
+	db.Users.GetAll(db.Pool)
+
+	resp.rw = c.Writer
+	user.GetData(c.Request.Body)
+
+	if db.Users.PasswordVerification(user) == 0 {
+		token, err := authen.GetToken(user.Username)
+		if err != nil {
+			resp.ResponseWrongJWT()
+		} else {
+			resp.ResponseJWT(token)
+		}
+	} else {
+		resp.ResponseWrongLogin()
 	}
 }
